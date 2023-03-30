@@ -1,54 +1,47 @@
 import React, { useState } from 'react'
-import { Data, Eur, HeaderBox, HeaderList, RateBox, Usd } from './Header.styled'
+import { Data, Eur, HeaderBox, RateBox, Span, Usd } from './Header.styled'
 import { Container } from '../Container'
 import { useEffect } from 'react'
-import { getRates } from '../../services/api'
-import { Status } from '../../config/status'
+import { requestOptions, fetchUSD, fetchEUR } from '../../services/api'
+import { Report } from 'notiflix/build/notiflix-report-aio'
 
 export default function Header() {
-  const { init, loading, success, error } = Status
-
   const [usd, setUsd] = useState('')
   const [eur, setEur] = useState('')
-  const [status, setStatus] = useState(init)
-
-  // const [rates, setRates] = useState([])
-
-  // const usdRate = usd
-  // const eurRate = rates.find((rate) => rate.cc === 'EUR').rate
 
   useEffect(() => {
-    setStatus(loading)
-
-    async function getUSD() {
-      try {
-        const data = await getRates('UAH', 'USD', '1')
-        setUsd(String(data.result))
-        console.log(data.result)
-
-        setStatus(success)
-      } catch {
-        setStatus(error)
-        console.log('error')
-      }
-    }
-    getUSD()
-
-    async function getEUR() {
-      try {
-        const data = await getRates('UAH', 'EUR', '1')
-        setEur(String(data.result))
-        console.log(data.result)
-
-        setStatus(success)
-      } catch {
-        setStatus(error)
-        console.log('error')
-      }
-    }
-    getEUR()
-
-    // eslint-disable-next-line
+    Promise.all([
+      fetch(fetchUSD, requestOptions),
+      fetch(fetchEUR, requestOptions),
+    ])
+      .then(([usdResponse, eurResponse]) =>
+        Promise.all([
+          usdResponse.json(),
+          eurResponse.json(),
+          usdResponse.status,
+          eurResponse.status,
+        ])
+      )
+      .then(([usdData, eurData, usdStatus, eurStatus]) => {
+        if (usdStatus === 429 || eurStatus === 429) {
+          throw new Error('Too many requests')
+        }
+        setUsd(usdData?.rates?.UAH)
+        setEur(eurData?.rates?.UAH)
+      })
+      .catch((error) => {
+        if (error.message === 'Too many requests') {
+          console.log(
+            'Error 429: the allowable limit of server requests has been exceeded. Please contact the repository owner to replace the access key.'
+          )
+          Report.failure(
+            'Error 429',
+            'The allowable limit of server requests has been exceeded. Please contact the repository owner to replace the access key.'
+          )
+        } else {
+          Report.failure('Sorry, you should reload this page and try again')
+        }
+      })
   }, [])
 
   const getDate = () => {
@@ -68,13 +61,14 @@ export default function Header() {
         <Data>{getDate()}</Data>
         <RateBox>
           <Usd>
-            <span>USD:</span> {status === 'loading' ? '---' : usd}
+            <Span>USD:</Span>
+            {usd ? usd : 'loading...'}
           </Usd>
           <Eur>
-            <span>EUR:</span> {status === 'loading' ? '---' : eur}
+            <Span>EUR:</Span>
+            {eur ? eur : 'loading...'}
           </Eur>
         </RateBox>
-        <HeaderList></HeaderList>
       </Container>
     </HeaderBox>
   )

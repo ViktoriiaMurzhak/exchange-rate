@@ -1,5 +1,4 @@
 import styled from 'styled-components'
-// import { breakpoints } from '../../helpers/variables'
 
 export const HeaderBox = styled.header`
   width: 100%;
@@ -10,6 +9,7 @@ export const HeaderBox = styled.header`
 
 export const Data = styled.p`
   margin-bottom: 10px;
+  color: #c9d6ea;
 `
 
 export const RateBox = styled.div`
@@ -19,11 +19,10 @@ export const RateBox = styled.div`
   gap: 20px;
 `
 
+export const Span = styled.span`
+  font-weight: 700;
+  margin-right: 6px;
+`
+
 export const Usd = styled.p``
 export const Eur = styled.p``
-
-export const HeaderList = styled.ul`
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-`
